@@ -36,14 +36,14 @@ pipx install prompt-cheater
 ### Homebrew (macOS)
 
 ```bash
-brew tap kimgyudong/prompt-cheater
+brew tap KIMGYUDONG/prompt-cheater
 brew install prompt-cheater
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/kimgyudong/prompt-cheater.git
+git clone https://github.com/KIMGYUDONG/prompt-cheater.git
 cd prompt-cheater
 pip install -e .
 ```

@@ -19,9 +19,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-homepage = "https://github.com/kimgyudong/prompt-cheater"
-repository = "https://github.com/kimgyudong/prompt-cheater"
-documentation = "https://github.com/kimgyudong/prompt-cheater#readme"
+homepage = "https://github.com/KIMGYUDONG/prompt-cheater"
+repository = "https://github.com/KIMGYUDONG/prompt-cheater"
+documentation = "https://github.com/KIMGYUDONG/prompt-cheater#readme"
 
 [tool.poetry.dependencies]
 python = "^3.10"
