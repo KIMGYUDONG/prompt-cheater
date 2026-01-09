@@ -18,6 +18,7 @@ from .ui import (
     console,
     get_multiline_input,
     get_single_line_input,
+    print_api_key_guide,
     print_banner,
     print_error,
     print_info,
@@ -82,8 +83,8 @@ def main():
     # Initialize Gemini client once
     try:
         client = GeminiClient()
-    except ValueError as e:
-        print_error(str(e))
+    except ValueError:
+        print_api_key_guide()
         sys.exit(1)
 
     console.print(f"[{COLORS['dim']}]Ctrl+C to exit[/{COLORS['dim']}]")

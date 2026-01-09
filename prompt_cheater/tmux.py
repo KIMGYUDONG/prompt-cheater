@@ -3,6 +3,7 @@
 import os
 import subprocess
 import tempfile
+import time
 
 import libtmux
 from libtmux.pane import Pane
@@ -147,10 +148,10 @@ def send_to_pane(pane: Pane, text: str, enter: bool = True) -> None:
         if result.returncode != 0:
             raise TmuxError(f"Failed to load buffer: {result.stderr}")
 
-        # Paste buffer into target pane with bracket paste mode (-p)
+        # Paste buffer into target pane (without -p to avoid bracket paste timing issues)
         pane_id = pane.pane_id or ""
         result = subprocess.run(
-            ["tmux", "paste-buffer", "-p", "-t", pane_id],
+            ["tmux", "paste-buffer", "-t", pane_id],
             capture_output=True,
             text=True,
             check=False,
@@ -158,8 +159,9 @@ def send_to_pane(pane: Pane, text: str, enter: bool = True) -> None:
         if result.returncode != 0:
             raise TmuxError(f"Failed to paste buffer: {result.stderr}")
 
-        # Send Enter if requested
+        # Send Enter if requested (with small delay for paste to complete)
         if enter:
+            time.sleep(0.05)
             pane.send_keys("", enter=True)
     finally:
         os.unlink(temp_path)
