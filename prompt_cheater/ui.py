@@ -238,18 +238,16 @@ def print_api_key_guide() -> None:
     guide.append("   https://aistudio.google.com/apikey\n\n", style=COLORS["info"])
 
     guide.append("2. ", style=f"bold {COLORS['info']}")
-    guide.append("Set the environment variable:\n\n", style="bold")
-    guide.append("   # Add to ~/.zshrc or ~/.bashrc\n", style=COLORS["dim"])
+    guide.append("Set your API key:\n\n", style="bold")
+    guide.append("   # Recommended: Use config command\n", style=COLORS["dim"])
+    guide.append("   cheater config set\n\n", style=COLORS["success"])
+    guide.append("   # Or set environment variable\n", style=COLORS["dim"])
     guide.append(
         '   export GEMINI_API_KEY="your_key_here"\n\n', style=COLORS["success"]
     )
-    guide.append("   # Or create .env file in current directory\n", style=COLORS["dim"])
-    guide.append(
-        "   echo 'GEMINI_API_KEY=your_key' > .env\n\n", style=COLORS["success"]
-    )
 
     guide.append("3. ", style=f"bold {COLORS['info']}")
-    guide.append("Restart terminal and run:\n", style="bold")
+    guide.append("Run cheater:\n", style="bold")
     guide.append("   cheater", style=COLORS["success"])
 
     console.print()

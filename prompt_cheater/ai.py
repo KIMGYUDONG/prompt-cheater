@@ -5,6 +5,8 @@ import os
 import google.generativeai as genai
 from dotenv import load_dotenv
 
+from .config import ConfigManager
+
 # Load environment variables
 load_dotenv()
 
@@ -46,13 +48,23 @@ class GeminiClient:
         """Initialize the Gemini client.
 
         Args:
-            api_key: Gemini API key. If not provided, reads from GEMINI_API_KEY env var.
+            api_key: Gemini API key. If not provided, reads from config or env var.
+
+        Priority order:
+            1. Explicit parameter
+            2. ~/.cheater/config file
+            3. GEMINI_API_KEY environment variable
         """
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+        config = ConfigManager()
+        self.api_key = (
+            api_key
+            or config.get("api_key")
+            or os.getenv("GEMINI_API_KEY")
+        )
         if not self.api_key:
             raise ValueError(
                 "GEMINI_API_KEY not found. "
-                "Set it as an environment variable or pass it directly."
+                "Run 'cheater config set' or set GEMINI_API_KEY environment variable."
             )
 
         genai.configure(api_key=self.api_key)

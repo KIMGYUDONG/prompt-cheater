@@ -3,9 +3,11 @@
 import argparse
 import sys
 import time
+from getpass import getpass
 
 from . import __version__
 from .ai import GeminiClient
+from .config import ConfigManager
 from .tmux import (
     NoPaneFoundError,
     NotInTmuxError,
@@ -30,44 +32,56 @@ from .ui import (
 )
 
 
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(
-        prog="cheater",
-        description="Convert natural language to Claude-friendly XML prompts and inject into Tmux",
-    )
-    parser.add_argument(
-        "-m",
-        "--multiline",
-        action="store_true",
-        default=False,
-        dest="multiline",
-        help="Use multiline input mode (default is single-line)",
-    )
-    parser.add_argument(
-        "-p",
-        "--preview",
-        action="store_true",
-        default=False,
-        help="Preview the generated XML before sending",
-    )
-    parser.add_argument(
-        "-n",
-        "--no-send",
-        action="store_true",
-        default=False,
-        dest="no_send",
-        help="Generate XML but don't send to Tmux (dry run)",
-    )
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version=f"Prompt Cheater v{__version__}",
-    )
+def handle_config(args: argparse.Namespace) -> None:
+    """Handle config subcommand."""
+    config = ConfigManager()
 
-    args = parser.parse_args()
+    if args.config_action == "set":
+        # Interactive API key input
+        print_info("Enter your Gemini API key (input hidden):")
+        try:
+            api_key = getpass("  API Key: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print()
+            print_warning("Cancelled.")
+            sys.exit(0)
 
+        if not api_key:
+            print_error("API key cannot be empty.")
+            sys.exit(1)
+
+        config.set("api_key", api_key)
+        print_success("API key saved to ~/.cheater/config")
+
+    elif args.config_action == "show":
+        settings = config.show()
+        if not settings:
+            print_warning("No configuration found.")
+            print_info("Run 'cheater config set' to configure API key.")
+        else:
+            console.print()
+            for key, value in settings.items():
+                if key == "api_key":
+                    # Mask API key for security
+                    masked = value[:8] + "..." + value[-4:] if len(value) > 12 else "***"
+                    console.print(f"  [bold]{key}[/bold]: {masked}")
+                else:
+                    console.print(f"  [bold]{key}[/bold]: {value}")
+            console.print()
+
+    elif args.config_action == "delete":
+        if config.delete("api_key"):
+            print_success("API key deleted from ~/.cheater/config")
+        else:
+            print_warning("No API key found in config.")
+
+    else:
+        print_error("Unknown config action. Use: set, show, delete")
+        sys.exit(1)
+
+
+def run_interactive(args: argparse.Namespace) -> None:
+    """Run interactive prompt generation mode."""
     print_banner()
 
     # Check Tmux environment early (unless dry run)
@@ -156,6 +170,68 @@ def main():
             print_info("Dry run mode - prompt was not sent.")
 
         console.print()
+
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(
+        prog="cheater",
+        description="Convert natural language to Claude-friendly XML prompts and inject into Tmux",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"Prompt Cheater v{__version__}",
+    )
+
+    # Subcommands
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Config subcommand
+    config_parser = subparsers.add_parser("config", help="Manage configuration")
+    config_subparsers = config_parser.add_subparsers(
+        dest="config_action", help="Config actions"
+    )
+    config_subparsers.add_parser("set", help="Set API key interactively")
+    config_subparsers.add_parser("show", help="Show current configuration")
+    config_subparsers.add_parser("delete", help="Delete API key from config")
+
+    # Interactive mode arguments (default when no subcommand)
+    parser.add_argument(
+        "-m",
+        "--multiline",
+        action="store_true",
+        default=False,
+        dest="multiline",
+        help="Use multiline input mode (default is single-line)",
+    )
+    parser.add_argument(
+        "-p",
+        "--preview",
+        action="store_true",
+        default=False,
+        help="Preview the generated XML before sending",
+    )
+    parser.add_argument(
+        "-n",
+        "--no-send",
+        action="store_true",
+        default=False,
+        dest="no_send",
+        help="Generate XML but don't send to Tmux (dry run)",
+    )
+
+    args = parser.parse_args()
+
+    # Route to appropriate handler
+    if args.command == "config":
+        if not args.config_action:
+            config_parser.print_help()
+            sys.exit(1)
+        handle_config(args)
+    else:
+        run_interactive(args)
 
 
 def app():
