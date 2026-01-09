@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-import tempfile
 import time
 
 import libtmux
@@ -122,7 +121,10 @@ def get_target_pane(explicit_pane_id: str | None = None) -> Pane:
 
 
 def send_to_pane(pane: Pane, text: str, enter: bool = True) -> None:
-    """Send text to a Tmux pane using buffer for long text support.
+    """Send text to a Tmux pane using send-keys for direct input.
+
+    Uses send-keys -l (literal mode) instead of paste-buffer to avoid
+    Claude Code detecting the input as pasted text.
 
     Args:
         pane: Target Pane object.
@@ -132,39 +134,31 @@ def send_to_pane(pane: Pane, text: str, enter: bool = True) -> None:
     Raises:
         TmuxError: If text transmission fails.
     """
-    # Use load-buffer + paste-buffer for reliable long text transmission
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
-        f.write(text)
-        temp_path = f.name
+    pane_id = pane.pane_id or ""
 
-    try:
-        # Load text into tmux buffer
+    # Chunk size for send-keys (avoid buffer limits)
+    chunk_size = 500
+
+    # Send text in chunks using send-keys -l (literal mode)
+    # This is recognized as typing, not pasting
+    for i in range(0, len(text), chunk_size):
+        chunk = text[i : i + chunk_size]
         result = subprocess.run(
-            ["tmux", "load-buffer", temp_path],
+            ["tmux", "send-keys", "-t", pane_id, "-l", chunk],
             capture_output=True,
             text=True,
             check=False,
         )
         if result.returncode != 0:
-            raise TmuxError(f"Failed to load buffer: {result.stderr}")
+            raise TmuxError(f"Failed to send keys: {result.stderr}")
+        # Small delay between chunks for stability
+        if i + chunk_size < len(text):
+            time.sleep(0.01)
 
-        # Paste buffer into target pane (without -p to avoid bracket paste timing issues)
-        pane_id = pane.pane_id or ""
-        result = subprocess.run(
-            ["tmux", "paste-buffer", "-t", pane_id],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            raise TmuxError(f"Failed to paste buffer: {result.stderr}")
-
-        # Send Enter if requested (with small delay for paste to complete)
-        if enter:
-            time.sleep(0.05)
-            pane.send_keys("", enter=True)
-    finally:
-        os.unlink(temp_path)
+    # Send Enter if requested
+    if enter:
+        time.sleep(0.05)
+        pane.send_keys("", enter=True)
 
 
 def send_text_to_other_pane(text: str, enter: bool = True) -> str:
