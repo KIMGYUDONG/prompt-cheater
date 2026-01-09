@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "prompt-cheater"
-version = "0.1.0"
+version = "0.2.0"
 description = "Convert natural language to Claude-friendly XML prompts and inject into Tmux"
 authors = ["Kim Gyudong"]
 readme = "README.md"
