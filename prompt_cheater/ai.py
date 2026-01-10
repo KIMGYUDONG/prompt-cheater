@@ -2,8 +2,8 @@
 
 import os
 
-import google.generativeai as genai
 from dotenv import load_dotenv
+from google import genai
 
 from .config import ConfigManager
 
@@ -67,8 +67,7 @@ class GeminiClient:
                 "Run 'cheater config set' or set GEMINI_API_KEY environment variable."
             )
 
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel("gemini-2.0-flash")
+        self.client = genai.Client(api_key=self.api_key)
 
     def generate_xml_prompt(self, user_input: str) -> str:
         """Convert user's natural language input to XML prompt.
@@ -82,11 +81,11 @@ class GeminiClient:
         Raises:
             Exception: If API call fails.
         """
-        chat = self.model.start_chat(history=[])
+        prompt = f"{META_PROMPT}\n\nUser's input to transform:\n{user_input}"
 
-        # Send meta-prompt as system context
-        response = chat.send_message(
-            f"{META_PROMPT}\n\nUser's input to transform:\n{user_input}"
+        response = self.client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
         )
 
         # Clean up the response - remove any accidental markdown
